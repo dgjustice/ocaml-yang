@@ -1,0 +1,9 @@
+(library
+ (libraries ast)
+ (name parsing))
+
+(ocamllex lexer)
+
+(menhir
+(flags --external-tokens Lexer)
+ (modules parser))

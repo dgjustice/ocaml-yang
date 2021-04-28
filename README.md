@@ -145,12 +145,6 @@ rule lex = parse
 I thought this part would be first when I first dived in, but I suppose we save the best for last!
 We have to tell Menhir how to build our AST from tokens in [`parser.mly`](./src/math_expr/parsing/parser.mly)
 I still need to do a **lot** of RTFM'ing.
-The tokens needs to be declared in this file as well.
-
-```ocaml
-%token <int> VAL
-%token MULT PLUS LPAREN RPAREN EOF
-```
 
 Do you remember "Please Excuse My Dear Aunt Sally" from grade school?
 
@@ -184,7 +178,26 @@ parse_expr:
   | pexpr EOF                      { $1 }
 ```
 
-### Next steps
+## ABNF parser
 
-Testing!
-More complex parsers!
+ABNF is defined in [RFC 5234](https://tools.ietf.org/html/rfc5234).
+This is a leap in complexity, and I'm making this up as I go along.
+After reading and a lot of stewing on different ideas, ABNF really boils down to a tree of rules and regex patterns that are valid terminal conditions.
+What makes [JSON](https://tools.ietf.org/html/rfc7159) or [YANG](https://tools.ietf.org/html/rfc7950) or an [e-mail header](https://tools.ietf.org/html/rfc733) what they are is how we interpret those rules.
+We have to assign an implementation to the rule names.
+ABNF grammars give us a way to [verify compliant texts](https://en.wikipedia.org/wiki/Augmented_Backus%E2%80%93Naur_form#Example), but no way to build data structures.
+
+### ABNF AST
+
+```ocaml
+type abnf_tree = 
+  | TermVal of {name: string; value: string}
+  | Rules of {name: string; elements: abnf_tree list}
+```
+
+That's it!
+ABNF is simply `{rule_name: [elements]}` where each node is assigned a name.
+Your initial though (as was mine) is that this isn't useful at all.
+This is where the RFC specifications come into play.
+ABNF tells us how to parse, the rule names -> specifications tell us how to do something with the tree.
+

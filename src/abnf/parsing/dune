@@ -1,9 +1,12 @@
 (library
  (libraries ast)
+ (preprocess
+  (pps ppx_jane bisect_ppx --conditional))
+ (lint
+  (pps ppx_js_style -annotated-ignores -styler -pretty -dated-deprecation))
  (name parsing))
 
 (ocamllex lexer)
 
 (menhir
-(flags --external-tokens Lexer)
  (modules parser))

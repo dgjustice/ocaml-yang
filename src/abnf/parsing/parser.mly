@@ -1,23 +1,35 @@
-%token <int> VAL
-%token MULT PLUS LPAREN RPAREN EOF
-
-%left PLUS
-%left MULT
+%token EQUALS
+%token INCEQUALS
+%token FWDSLASH
+%token LPAREN
+%token RPAREN
+%token <string> STRING
+%token <string> RULENAME
+%token WSP
+%token EOF
 
 %{
   open Ast
 %}
 
-%start parse_expr
-%type <Ast.expr> parse_expr pexpr
+%start rule
+
+%type <Ast.abnf_tree> rule
+// %type <Ast.quotedstring> quotedstring
+// %type <Ast.rulename> rulename
 
 %%
 
-%public pexpr:
-  | VAL                     { Val ($1) }
-  | pexpr PLUS pexpr        { Plus ($1, $3) }
-  | pexpr MULT pexpr        { Mult ($1, $3) }
-  | LPAREN f = pexpr RPAREN { f }
+// rules:
+//   | rule_set=list(rule); EOF {rule_set}
 
-parse_expr:
-  | pexpr EOF                      { $1 }
+rule:
+  | option(WSP) rn=RULENAME option(WSP) EQUALS option(WSP) e=elements option(WSP) EOF { Rules{name = rn; elements = e} }
+  | EOF { Rules{name="foo"; elements=[TermVal(Quotedstring("bar"))]} }
+
+element:
+  | s=STRING { TermVal(Quotedstring(s)) }
+  | s=RULENAME { TermVal(Rulename(s)) }
+
+elements:
+  | elements=separated_list(WSP, element) {elements}

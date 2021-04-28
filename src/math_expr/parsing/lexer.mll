@@ -1,11 +1,5 @@
 {
-type token =
-  | VAL of (int)
-  | PLUS
-  | MULT
-  | LPAREN
-  | RPAREN
-  | EOF
+  open Parser
 }
 
 let digit = ['0'-'9']

@@ -28,8 +28,6 @@
 %start rule
 
 %type <Ast.abnf_tree> rule
-// %type <Ast.quotedstring> quotedstring
-// %type <Ast.rulename> rulename
 
 %%
 

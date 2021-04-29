@@ -1,0 +1,6 @@
+(test
+ (name test_lexer)
+ (libraries ounit2 parsing ast)
+ (lint
+  (pps ppx_js_style -check-doc-comments -annotated-ignores -styler -pretty
+    -dated-deprecation)))

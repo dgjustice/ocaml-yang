@@ -32,11 +32,14 @@ let termval = binary | decimal | hex
 rule lex = parse
   | "(" { LPAREN }
   | ")" { RPAREN }
+  | "[" { LBRACK }
+  | "]" { RBRACK }
   | "=/"        { INCEQUALS }
   | "="        { EQUALS }
   | "/" { FWDSLASH }
   | '"'      { read_string (Buffer.create 17) lexbuf }
   | ";"        { read_single_line_comment lexbuf }
+  | "*" { SPLAT }
   | rulename as s { RULENAME (s) }
   | binrange as s { BINARYRANGE (s) }
   | bincon as s { BINARYCON (s) }
@@ -48,11 +51,11 @@ rule lex = parse
   | hexcon as s { HEXCON (s) }
   | hex as s { HEX (s) }
   | whitespace { WSP }
-  | newline { next_line lexbuf; lex lexbuf }
+  | newline { CRLF }
   | eof        { EOF }
   | _ {raise (SyntaxError ("Lexer - Illegal character: " ^ Lexing.lexeme lexbuf)) }
 and read_single_line_comment = parse
-  | newline { next_line lexbuf; lex lexbuf }
+  | newline { next_line lexbuf; CRLF }
   | eof { EOF }
   | _ { read_single_line_comment lexbuf }
 and read_string buf = parse

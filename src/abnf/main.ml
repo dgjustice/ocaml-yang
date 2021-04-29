@@ -2,7 +2,6 @@ open Ast
 
 open Parsing
 
-
 let load_file f =
   (* Read file and display the first line *)
   let ic = open_in f in
@@ -16,13 +15,15 @@ let load_file f =
       close_in_noerr ic;
       raise e
 
-let expr_of_string s = Parser.rule Lexer.lex (Lexing.from_string s)
+let expr_of_string s = Parser.rules Lexer.lex (Lexing.from_string s)
 
-let file = "rfc/rfc5234-abnf-core.abnf"
+let fname = "rfc/rfc5234-abnf-core.abnf"
 
-(* let test_str = "         ALPHA          =  %x41-5A / %x61-7A   ; A-Z / a-z" *)
-let test_str = "    FOOBAR   =foo bar"
+(* let test_str = "         ALPHA          =  %x41-5A / %x61-7A   ; A-Z / a-z
+    FOOBAR   = foo bar \"qud\"  / womp  " *)
+
+let () = Utils.debug_tokens (load_file fname)
 
 (* let () = List.iter (fun t -> t |> to_str |> print_endline) (expr_of_string test_str) *)
 
-let () = print_endline (to_str (expr_of_string test_str))
+let () = List.iter (fun s -> s |> to_str |> print_endline)  (expr_of_string (load_file fname))

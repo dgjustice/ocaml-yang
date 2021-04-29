@@ -5,6 +5,8 @@
 %token RPAREN
 %token RBRACK
 %token LBRACK
+%token CRLF
+%token SPLAT
 %token <string> STRING
 %token <string> RULENAME
 %token <string> BINARY
@@ -25,19 +27,19 @@
 
 %left WSP FWDSLASH
 
-%start rule
+%start rules
 
-%type <Ast.abnf_tree> rule
+%type <Ast.abnf_tree list> rules
 
 %%
 
-// rules:
-//   | rule_set=list(rule); EOF {rule_set}
+rules:
+  | rule_set=list(rule); EOF {rule_set}
+  | EOF {[]}
 
 rule:
-| WSP? rn=RULENAME WSP? EQUALS WSP? e=expr EOF { Rules{name = rn; elements = [e]} }
-| WSP? rn=RULENAME WSP? INCEQUALS WSP? e=expr EOF { UnaryOpIncOr{name = rn; elements = [e]} }
-| EOF { RuleElement(Quotedstring("empty file")) }
+| WSP? rn=RULENAME WSP? EQUALS WSP? e=expr WSP? CRLF* { Rules{name = rn; elements = [e]} }
+| WSP? rn=RULENAME WSP? INCEQUALS WSP? e=expr WSP? CRLF* { UnaryOpIncOr{name = rn; elements = [e]} }
 
 element:
 | s=STRING  { RuleElement(Quotedstring(s)) }
@@ -58,7 +60,6 @@ element:
 
 expr:
 | e=element {e}
-| e=element WSP {e}
 | e1=expr WSP FWDSLASH WSP e2=expr { BinOpOr (e1, e2) }
 | e1=expr WSP FWDSLASH e2=expr { BinOpOr (e1, e2) }
 | e1=expr FWDSLASH WSP e2=expr { BinOpOr (e1, e2) }

@@ -269,6 +269,8 @@ element:
 | s=RULENAME  { RuleElement(Rulename(s)) }
 ```
 
+### More parsing and lexing problems
+
 I have been all over the place trying to thread enough pieces together to have a somewhat working base.
 It's probably a goood idea to check in on where we're at.
 
@@ -295,7 +297,91 @@ It took all of that to be able to parse the first ABNF core rule!
 let test_str = "         ALPHA          =  %x41-5A / %x61-7A   ; A-Z / a-z"
 ```
 
-We should be able to parse all of the core rules up to `LWSP`...
+We should be able to parse all of the core rules up to `LWSP`.
+One.
+At.
+A.
+Time.
+😖
+If we concatenate two lines into a multi-line string, the parser falls on it's face.
+I can't find a good way to evaluate the token string emitted from `ocamllex`, so I wrote a helper function to dump it to the console.
+
+```ocaml
+let print_tok tok =
+  match tok with
+  | Parser.EQUALS -> print_endline "EQUALS"
+  ... all the tokenz
+
+let () = 
+let buff = Lexing.from_string test_str in
+  while buff.lex_eof_reached do
+    print_tok (Lexer.lex buff)
+  done
+```
+
+Queue up the sad trombone.  Womp, womp, woooomp. 😭
+
+```shell
+dune exec ./main.exe
+WSP                  
+RULENAME ALPHA
+WSP
+EQUALS
+WSP
+HEXRANGE %x41-5A
+WSP
+FWDSLASH
+WSP
+HEXRANGE %x61-7A
+WSP
+WSP
+RULENAME FOOBAR
+WSP
+EQUALS
+WSP
+RULENAME foo
+WSP
+RULENAME bar
+WSP
+STRING qud
+WSP
+FWDSLASH
+WSP
+RULENAME womp
+WSP
+EOF
+Fatal error: exception Parsing.Parser.MenhirBasics.Error
+Raised at Parsing__Parser._menhir_errorcase in file "parsing/parser.ml", line 806, characters 8-18
+Called from Dune__exe__Main in file "main.ml", line 57, characters 31-56
+```
+
+That double `WSP` is the issue.
+Easy fix, I think; we need to add a newline token and modify the parsing rules.
+
+```ocaml
+let test_str = "         ALPHA          =  %x41-5A / %x61-7A   ; A-Z / a-z
+    FOOBAR   = foo bar \"qud\"  / womp  "
+```
+
+...results in:
+
+```shell
+Rule name: ALPHA, elements -> { Rulename: hexrange %x41-5A } / { Rulename: hexrange %x61-7A }
+Rule name: FOOBAR, elements -> { Rulename: foo } ^ { Rulename: bar } ^ { Quotedstring: qud } / { Rulename: womp }
+```
+
+Now everything works as expected down to the `LWSP` rule.
+
+```shell
+...
+RULENAME LWSP
+WSP
+EQUALS
+WSP
+Fatal error: exception Parsing.Lexer.SyntaxError("Lexer - Illegal character: *")
+```
+
+
 
 ## Reference
 
@@ -311,3 +397,4 @@ We should be able to parse all of the core rules up to `LWSP`...
 
 - `%d97.98.99` is a legal concatenation
 - Create types in the AST to match termvals
+- Nuke my env and make sure I can rebuild from scratch

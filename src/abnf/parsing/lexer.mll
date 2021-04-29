@@ -17,15 +17,36 @@ let digit = ['0'-'9']
 let whitespace = [' ' '\t']+
 let newline = '\r' | '\n' | "\r\n"
 let rulename = (alpha) (alpha|digit|'-')*
+let binary = ("%b") (['0' '1'])+
+let binrange = (binary) ('-') (['0' '1'])+
+let bincon = (binary) ('.') (['0' '1'])+
+let decimal = ("%d") (digit)+
+let decimalrange = (decimal) ('-') (digit)+
+let decimalcon = (decimal) ('.') (digit)+
+let hexdigit = digit | ['a'-'f' 'A'-'F']
+let hex = ("%x") (hexdigit)+
+let hexrange = (hex) ('-') (hexdigit)+
+let hexcon = (hex) ('.') (hexdigit)+
+let termval = binary | decimal | hex
 
 rule lex = parse
   | "(" { LPAREN }
   | ")" { RPAREN }
-  | rulename as s { RULENAME (s) }
   | "=/"        { INCEQUALS }
   | "="        { EQUALS }
+  | "/" { FWDSLASH }
   | '"'      { read_string (Buffer.create 17) lexbuf }
   | ";"        { read_single_line_comment lexbuf }
+  | rulename as s { RULENAME (s) }
+  | binrange as s { BINARYRANGE (s) }
+  | bincon as s { BINARYCON (s) }
+  | binary as s { BINARY (s) }
+  | decimalrange as s { DECIMALRANGE (s) }
+  | decimalcon as s { DECIMALCON (s) }
+  | decimal as s { DECIMAL (s) }
+  | hexrange as s { HEXRANGE (s) }
+  | hexcon as s { HEXCON (s) }
+  | hex as s { HEX (s) }
   | whitespace { WSP }
   | newline { next_line lexbuf; lex lexbuf }
   | eof        { EOF }

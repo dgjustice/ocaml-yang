@@ -187,17 +187,127 @@ What makes [JSON](https://tools.ietf.org/html/rfc7159) or [YANG](https://tools.i
 We have to assign an implementation to the rule names.
 ABNF grammars give us a way to [verify compliant texts](https://en.wikipedia.org/wiki/Augmented_Backus%E2%80%93Naur_form#Example), but no way to build data structures.
 
-### ABNF AST
+### ABNF AST, version 1
+
+This was my first stab at the grammar and AST.
+Of course, it is completely wrong, but I think it will help show the process and where I got stuck.
+In reality, the development of the lexer, parser, and AST happen in parallel for less trivial projects.
+Let's dive in and work our way through it.
 
 ```ocaml
 type abnf_tree = 
-  | TermVal of {name: string; value: string}
+  | TermVal of string
   | Rules of {name: string; elements: abnf_tree list}
 ```
 
-That's it!
-ABNF is simply `{rule_name: [elements]}` where each node is assigned a name.
-Your initial though (as was mine) is that this isn't useful at all.
-This is where the RFC specifications come into play.
-ABNF tells us how to parse, the rule names -> specifications tell us how to do something with the tree.
+ABNF is simply `{rule_name: [elements]}` where each rule node is assigned a name (way oversimplified).
+`elements` is a space-separated list of rule names or terminal values.
+Here is our first challenge, dealing with the space!
+Menhir provides a utility function `separated_nonempty_list(sep, elem)`, but `sep` must be a token.
 
+```ocaml
+let test_str = "         ALPHA          =  foo bar \"foo\""
+```
+
+This works fine until you add a space at the end.
+I fought with this quite a bit until I ran across an [article](http://gallium.inria.fr/blog/lr-lists/) on dealing with optional list terminals.
+
+```ocaml
+elements:
+  | elements=nonempty_list(terminated(element, WSP)) {elements}
+  | elements=separated_nonempty_list(WSP, element) {elements}
+```
+
+Now we can parse a string like this...
+
+```ocaml
+let test_str = "         ALPHA          =  foo bar \"foo\" %d42.33 %x42a-42 
+```
+
+Which results in:
+`Rule name: ALPHA, elements -> { Rulename: foo }, { Rulename: bar }, { Quotedstring: foo }, { Rulename: decimalcon %d42.33 }, { Rulename: hexrange %x42a-42 }`
+
+An open question is where to put certain logic.
+I chose to build specific regex's for the numeric terminal values to try and catch errors early.
+It's not really possible to catch range errors here (`a-b` where `a` must be less than `b`).
+
+Now we have a list of, uh, stuff, so what do we do with it?
+The next thing I want to implement is the optional `/` operator.
+This is a binary operator, and after reading through the RFC (for the 97th time), I realized that whitespace functions the same way.
+🤔
+D'oh!
+It's concatenation!
+Let's toss out the list expansion and try to turn `WSP` into a binary operator.
+
+```ocaml
+expr:
+| e=element {e}
+| e=element WSP {e}
+| e1=expr WSP FWDSLASH WSP e2=expr { BinOpOr (e1, e2) }
+| e1=expr WSP FWDSLASH e2=expr { BinOpOr (e1, e2) }
+| e1=expr FWDSLASH WSP e2=expr { BinOpOr (e1, e2) }
+| e1=expr WSP e2=expr { BinOpCon (e1, e2) }
+```
+
+It is ugly, but I am still working through how the internal machinery works.
+The main problem is that `WSP` could be padding _or_ an actual operator.
+I also built a list of potential elements to match the terminal values in ABNF.
+Later, I will create proper types for each of these in the AST.
+
+```ocaml
+element:
+| s=STRING  { RuleElement(Quotedstring(s)) }
+| s=HEX  { RuleElement(TermVal("hex " ^ s)) }
+| s=HEXCON  { RuleElement(TermVal("hexcon " ^ s)) }
+| s=HEXRANGE  { RuleElement(TermVal("hexrange " ^ s)) }
+| s=BINARY  { RuleElement(TermVal("binary " ^ s)) }
+| s=BINARYCON  { RuleElement(TermVal("binarycon " ^ s)) }
+| s=BINARYRANGE  { RuleElement(TermVal("binaryrange " ^ s)) }
+| s=DECIMAL  { RuleElement(TermVal("decimal " ^ s)) }
+| s=DECIMALCON  { RuleElement(TermVal("decimalcon " ^ s)) }
+| s=DECIMALRANGE  { RuleElement(TermVal("decimalrange " ^ s)) }
+| s=RULENAME  { RuleElement(Rulename(s)) }
+```
+
+I have been all over the place trying to thread enough pieces together to have a somewhat working base.
+It's probably a goood idea to check in on where we're at.
+
+|Done |RFC Section |Notes |
+--- | --- | ---
+|✅ | 2.1 Rule Naming | |
+|☑ | 2.2 Rule Form |Mostly done with the binary operator implementation|
+|☑ | 2.3 Terminal Values |Need to add types to AST|
+|[ ] | 2.4 External encodings |🤷|
+|✅ | 3.1 Concatenation |As a binary op |
+|✅ | 3.2 Alternatives |As a binary op |
+|✅ | 3.3 Incremental Alternatives |As a unary op |
+|✅ | 3.4 Value Range Alternatives |As regex's |
+|[ ] | 3.5 Sequence Group | |
+|[ ] | 3.6 Variable Repitition | |
+|[ ] | 3.7 Specific Repitition | |
+|[ ] | 3.8 Optional Sequence | |
+|✅ | 3.9 Comment | |
+|[ ] | 3.10 Operator Precedence | |
+
+It took all of that to be able to parse the first ABNF core rule!
+
+```ocaml
+let test_str = "         ALPHA          =  %x41-5A / %x61-7A   ; A-Z / a-z"
+```
+
+We should be able to parse all of the core rules up to `LWSP`...
+
+## Reference
+
+- [Menhir](http://gallium.inria.fr/~fpottier/menhir/manual.html)
+- [ocamllex](https://ocaml.org/manual/lexyacc.html)
+- [`Lexing` module](https://ocaml.org/api/Lexing.html)
+- [debugger](https://ocaml.org/learn/tutorials/debug.html#Getting-help-and-info-in-the-debugger)
+- [delimited lists](http://gallium.inria.fr/blog/lr-lists/)
+- [compilers](https://lambda.uta.edu/cse5317/spring03/notes/node1.html)
+- [Bolt parser/lexer tutorial](https://mukulrathi.co.uk/create-your-own-programming-language/parsing-ocamllex-menhir/)
+
+## TODO
+
+- `%d97.98.99` is a legal concatenation
+- Create types in the AST to match termvals

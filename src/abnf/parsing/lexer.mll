@@ -16,30 +16,33 @@ let alpha = ['a'-'z' 'A'-'Z']
 let digit = ['0'-'9']
 let whitespace = [' ' '\t']+
 let newline = '\r' | '\n' | "\r\n"
+let rptrange = (digit+)? ('*')? (digit+)?
 let rulename = (alpha) (alpha|digit|'-')*
 let binary = ("%b") (['0' '1'])+
 let binrange = (binary) ('-') (['0' '1'])+
-let bincon = (binary) ('.') (['0' '1'])+
+let bincon = (binary) ('.' ['0' '1']+)+
 let decimal = ("%d") (digit)+
 let decimalrange = (decimal) ('-') (digit)+
-let decimalcon = (decimal) ('.') (digit)+
+let decimalcon = (decimal) ('.' digit+)+
 let hexdigit = digit | ['a'-'f' 'A'-'F']
 let hex = ("%x") (hexdigit)+
 let hexrange = (hex) ('-') (hexdigit)+
-let hexcon = (hex) ('.') (hexdigit)+
+let hexcon = (hex) ('.' hexdigit+)+
 let termval = binary | decimal | hex
+let equals = '=' whitespace?
+let incequals = "=/" whitespace?
 
 rule lex = parse
   | "(" { LPAREN }
   | ")" { RPAREN }
   | "[" { LBRACK }
   | "]" { RBRACK }
-  | "=/"        { INCEQUALS }
-  | "="        { EQUALS }
   | "/" { FWDSLASH }
+  | incequals        { INCEQUALS }
+  | equals        { EQUALS }
   | '"'      { read_string (Buffer.create 17) lexbuf }
   | ";"        { read_single_line_comment lexbuf }
-  | "*" { SPLAT }
+  | rptrange as s { RPTRANGE (s) }
   | rulename as s { RULENAME (s) }
   | binrange as s { BINARYRANGE (s) }
   | bincon as s { BINARYCON (s) }
@@ -50,8 +53,8 @@ rule lex = parse
   | hexrange as s { HEXRANGE (s) }
   | hexcon as s { HEXCON (s) }
   | hex as s { HEX (s) }
-  | whitespace { WSP }
-  | newline { CRLF }
+  | whitespace { lex lexbuf }
+  | newline { next_line lexbuf; CRLF }
   | eof        { EOF }
   | _ {raise (SyntaxError ("Lexer - Illegal character: " ^ Lexing.lexeme lexbuf)) }
 and read_single_line_comment = parse

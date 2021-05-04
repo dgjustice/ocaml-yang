@@ -178,7 +178,7 @@ parse_expr:
   | pexpr EOF                      { $1 }
 ```
 
-## ABNF parser
+## ABNF
 
 ABNF is defined in [RFC 5234](https://tools.ietf.org/html/rfc5234).
 This is a leap in complexity, and I'm making this up as I go along.
@@ -186,6 +186,28 @@ After reading and a lot of stewing on different ideas, ABNF really boils down to
 What makes [JSON](https://tools.ietf.org/html/rfc7159) or [YANG](https://tools.ietf.org/html/rfc7950) or an [e-mail header](https://tools.ietf.org/html/rfc733) what they are is how we interpret those rules.
 We have to assign an implementation to the rule names.
 ABNF grammars give us a way to [verify compliant texts](https://en.wikipedia.org/wiki/Augmented_Backus%E2%80%93Naur_form#Example), but no way to build data structures.
+
+### ABNF progress
+
+I have been all over the place trying to thread enough pieces together to have a somewhat working base.
+It's probably a goood idea to check in on where we're at.
+
+|Done |RFC Section |Notes |
+--- | --- | ---
+|✅ | 2.1 Rule Naming | |
+|✅ | 2.2 Rule Form |Done with the binary operator implementation, but not indent-aware.  I don't _think_ this matters.|
+|☑ | 2.3 Terminal Values |Need to add types to AST|
+|[ ] | 2.4 External encodings |🤷|
+|✅ | 3.1 Concatenation |As a binary op |
+|✅ | 3.2 Alternatives |As a binary op |
+|✅ | 3.3 Incremental Alternatives |As a unary op |
+|✅ | 3.4 Value Range Alternatives |As regex's |
+|✅ | 3.5 Sequence Group | |
+|✅ | 3.6 Variable Repitition | |
+|✅ | 3.7 Specific Repitition | |
+|✅ | 3.8 Optional Sequence | |
+|✅ | 3.9 Comment | |
+|[ ] | 3.10 Operator Precedence | |
 
 ### ABNF AST, version 1
 
@@ -226,6 +248,8 @@ let test_str = "         ALPHA          =  foo bar \"foo\" %d42.33 %x42a-42
 
 Which results in:
 `Rule name: ALPHA, elements -> { Rulename: foo }, { Rulename: bar }, { Quotedstring: foo }, { Rulename: decimalcon %d42.33 }, { Rulename: hexrange %x42a-42 }`
+
+### ABNF AST, version 2
 
 An open question is where to put certain logic.
 I chose to build specific regex's for the numeric terminal values to try and catch errors early.
@@ -269,27 +293,7 @@ element:
 | s=RULENAME  { RuleElement(Rulename(s)) }
 ```
 
-### More parsing and lexing problems
-
-I have been all over the place trying to thread enough pieces together to have a somewhat working base.
-It's probably a goood idea to check in on where we're at.
-
-|Done |RFC Section |Notes |
---- | --- | ---
-|✅ | 2.1 Rule Naming | |
-|☑ | 2.2 Rule Form |Mostly done with the binary operator implementation|
-|☑ | 2.3 Terminal Values |Need to add types to AST|
-|[ ] | 2.4 External encodings |🤷|
-|✅ | 3.1 Concatenation |As a binary op |
-|✅ | 3.2 Alternatives |As a binary op |
-|✅ | 3.3 Incremental Alternatives |As a unary op |
-|✅ | 3.4 Value Range Alternatives |As regex's |
-|[ ] | 3.5 Sequence Group | |
-|[ ] | 3.6 Variable Repitition | |
-|[ ] | 3.7 Specific Repitition | |
-|[ ] | 3.8 Optional Sequence | |
-|✅ | 3.9 Comment | |
-|[ ] | 3.10 Operator Precedence | |
+### ABNF Lexing
 
 It took all of that to be able to parse the first ABNF core rule!
 
@@ -381,6 +385,39 @@ WSP
 Fatal error: exception Parsing.Lexer.SyntaxError("Lexer - Illegal character: *")
 ```
 
+I simply need to add a regex for repitition groups...
+
+```ocaml
+let rptrange = (digit+)? ('*')? (digit+)?
+```
+
+and another type to hold it:
+
+```ocaml
+| RptRange of {range: string; tree: abnf_tree}
+```
+
+Finally, we can take care of the sequence types as well.
+
+```ocaml
+| LPAREN e=expr RPAREN { SequenceGrp [e] }
+| LBRACK e=expr RBRACK { OptSequence [e] }
+```
+
+At this point, I believe everything is in place for the lexer.
+🎉
+
+- It works against RFC5234 (ABNF) core rules and the full spec.
+- It works on RFC7159, the JSON spec.
+- It fails on RFC7950 because YANG uses some ABNF extensions that aren't present in RFC5234.
+
+75% of my test files, so not too bad.
+😅
+
+### ABNF Parsing, (┛ಠ_ಠ)┛彡┻━┻
+
+I fought this _way_ longer than I care to admit.
+It turns out that emiting tokens for whitespace is some sort of zen master trick, and I'm not zen master!
 
 
 ## Reference
@@ -395,6 +432,5 @@ Fatal error: exception Parsing.Lexer.SyntaxError("Lexer - Illegal character: *")
 
 ## TODO
 
-- `%d97.98.99` is a legal concatenation
 - Create types in the AST to match termvals
 - Nuke my env and make sure I can rebuild from scratch

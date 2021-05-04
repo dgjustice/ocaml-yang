@@ -6,7 +6,7 @@
 %token RBRACK
 %token LBRACK
 %token CRLF
-%token SPLAT
+%token <string> RPTRANGE
 %token <string> STRING
 %token <string> RULENAME
 %token <string> BINARY
@@ -25,8 +25,6 @@
   open Ast
 %}
 
-%left WSP FWDSLASH
-
 %start rules
 
 %type <Ast.abnf_tree list> rules
@@ -34,12 +32,13 @@
 %%
 
 rules:
-  | rule_set=list(rule); EOF {rule_set}
-  | EOF {[]}
+| rule_set=list(rule); EOF {rule_set}
+| EOF {[]}
 
 rule:
-| WSP? rn=RULENAME WSP? EQUALS WSP? e=expr WSP? CRLF* { Rules{name = rn; elements = [e]} }
-| WSP? rn=RULENAME WSP? INCEQUALS WSP? e=expr WSP? CRLF* { UnaryOpIncOr{name = rn; elements = [e]} }
+| rn=RULENAME EQUALS e=expr CRLF* { Rules{name = rn; elements = [e]} }
+| rn=RULENAME INCEQUALS e=expr CRLF* { UnaryOpIncOr{name = rn; elements = [e]} }
+| CRLF { RuleElement(TermVal("empty line")) }
 
 element:
 | s=STRING  { RuleElement(Quotedstring(s)) }
@@ -54,13 +53,10 @@ element:
 | s=DECIMALRANGE  { RuleElement(TermVal("decimalrange " ^ s)) }
 | s=RULENAME  { RuleElement(Rulename(s)) }
 
-// elements:
-// | elements=nonempty_list(terminated(element, WSP)) {elements}
-// | elements=separated_nonempty_list(WSP, element) {elements}
-
 expr:
-| e=element {e}
-| e1=expr WSP FWDSLASH WSP e2=expr { BinOpOr (e1, e2) }
-| e1=expr WSP FWDSLASH e2=expr { BinOpOr (e1, e2) }
-| e1=expr FWDSLASH WSP e2=expr { BinOpOr (e1, e2) }
-| e1=expr WSP e2=expr { BinOpCon (e1, e2) }
+| e=element CRLF? {e}
+| e1=expr e2=expr { BinOpOr (e1, e2) }
+| r=RPTRANGE e=expr { RptRange{range=r; tree=e} }
+| e1=expr FWDSLASH e2=expr { BinOpOr (e1, e2) }
+| LPAREN e=expr RPAREN { SequenceGrp [e] }
+| LBRACK e=expr RBRACK { OptSequence [e] }

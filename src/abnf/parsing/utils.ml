@@ -9,8 +9,8 @@ let print_tok tok =
   | RPAREN -> print_string " RPAREN "
   | RBRACK -> print_string " RBRACK "
   | LBRACK -> print_string " LBRACK "
-  | SPLAT -> print_string " SPLAT "
   | CRLF -> print_string " CRLF\n"
+  | RPTRANGE s -> print_string (" RPTRANGE \"" ^ s ^ "\"")
   | STRING s -> print_string (" STRING \"" ^ s ^ "\"")
   | RULENAME s -> print_string (" RULENAME '" ^ s ^ "'")
   | BINARY s -> print_string (" BINARY " ^ s)

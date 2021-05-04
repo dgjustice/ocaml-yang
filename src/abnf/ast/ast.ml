@@ -9,6 +9,9 @@ type abnf_tree =
 | BinOpOr of abnf_tree * abnf_tree
 | BinOpCon  of abnf_tree * abnf_tree
 | UnaryOpIncOr of {name: string; elements: abnf_tree list}
+| RptRange of {range: string; tree: abnf_tree}
+| SequenceGrp of (abnf_tree list)
+| OptSequence of (abnf_tree list)
 
 let rec str_join ch str_list =
 match str_list with
@@ -25,3 +28,6 @@ let rec to_str = function
 | BinOpOr (a, b) -> to_str a ^ " / " ^ to_str b
 | BinOpCon (a, b) -> to_str a ^ " ^ " ^ to_str b
 | UnaryOpIncOr s -> Printf.sprintf "=/ Rule name: %s, elements -> %s" s.name (str_join ", " (List.map to_str s.elements))
+| RptRange r -> Printf.sprintf "%s" (r.range ^ to_str r.tree)
+| SequenceGrp s -> Printf.sprintf "Sequence elements -> %s" (str_join ", " (List.map to_str s))
+| OptSequence s -> Printf.sprintf "Optional elements -> %s" (str_join ", " (List.map to_str s))

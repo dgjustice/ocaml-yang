@@ -17,13 +17,15 @@ let load_file f =
 
 let expr_of_string s = Parser.rules Lexer.lex (Lexing.from_string s)
 
-let fname = "rfc/rfc5234-abnf-core.abnf"
+let fname = "rfc/rfc5234-abnf.abnf"
 
-(* let test_str = "         ALPHA          =  %x41-5A / %x61-7A   ; A-Z / a-z
-    FOOBAR   = foo bar \"qud\"  / womp  " *)
+(* let test_str = "alternation    =  concatenation
+*(*c-wsp \"/\" *c-wsp concatenation)
+" *)
 
-let () = Utils.debug_tokens (load_file fname)
+let test_str = (load_file fname)
 
-(* let () = List.iter (fun t -> t |> to_str |> print_endline) (expr_of_string test_str) *)
 
-let () = List.iter (fun s -> s |> to_str |> print_endline)  (expr_of_string (load_file fname))
+let () = Utils.debug_tokens test_str
+
+let () = List.iter (fun t -> t |> to_str |> print_endline) (expr_of_string test_str)

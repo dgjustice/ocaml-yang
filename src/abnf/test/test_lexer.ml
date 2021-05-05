@@ -15,6 +15,7 @@ let suite =
   >::: [
          "test-RFC7159-JSON" >:: test_e2e "../rfc/rfc7159-json.abnf";
          "test-RFC5234-ABNF" >:: test_e2e "../rfc/rfc5234-abnf.abnf";
+         "test-RFC7950-YANG" >:: todo "Need to update grammar";
        ]
 
 let () = run_test_tt_main suite

@@ -417,8 +417,50 @@ At this point, I believe everything is in place for the lexer.
 ### ABNF Parsing, (┛ಠ_ಠ)┛彡┻━┻
 
 I fought this _way_ longer than I care to admit.
-It turns out that emiting tokens for whitespace is some sort of zen master trick, and I'm not zen master!
+It turns out that emiting tokens for whitespace is some sort of zen master trick, and I'm not a zen master!
+After beating my head against the wall and trolling Stack Overflow aimlessly, I finally sorted it out.
 
+TL;DR;
+Refactored rule definitions and realized the importance of "longest-match".
+
+Here is the output of the JSON spec:
+
+```console
+Rule name: JSON-text, elements -> { Rulename: object } / { Rulename: array }
+Rule name: begin-array, elements -> { Rulename: ws } ^ { Rulename: hex %x5B } ^ { Rulename: ws }
+Rule name: begin-object, elements -> { Rulename: ws } ^ { Rulename: hex %x7B } ^ { Rulename: ws }
+Rule name: end-array, elements -> { Rulename: ws } ^ { Rulename: hex %x5D } ^ { Rulename: ws }
+Rule name: end-object, elements -> { Rulename: ws } ^ { Rulename: hex %x7D } ^ { Rulename: ws }
+Rule name: name-separator, elements -> { Rulename: ws } ^ { Rulename: hex %x3A } ^ { Rulename: ws }
+Rule name: value-separator, elements -> { Rulename: ws } ^ { Rulename: hex %x2C } ^ { Rulename: ws }
+Rule name: ws, elements -> *Sequence elements -> { Rulename: hex %x20 } / { Rulename: hex %x09 } / { Rulename: hex %x0A } / { Rulename: hex %x0D }
+Rule name: value, elements -> { Rulename: false } / { Rulename: null } / { Rulename: true } / { Rulename: object } / { Rulename: array } / { Rulename: number } / { Rulename: string }
+Rule name: false, elements -> { Rulename: hexcon %x66.61.6c.73.65 }
+Rule name: null, elements -> { Rulename: hexcon %x6e.75.6c.6c }
+Rule name: true, elements -> { Rulename: hexcon %x74.72.75.65 }
+Rule name: object, elements -> { Rulename: begin-object } ^ Optional elements -> { Rulename: member } ^ *Sequence elements -> { Rulename: value-separator } ^ { Rulename: member } ^ { Rulename: end-object }
+Rule name: member, elements -> { Rulename: string } ^ { Rulename: name-separator } ^ { Rulename: value }
+Rule name: array, elements -> { Rulename: begin-array } ^ Optional elements -> { Rulename: value } ^ *Sequence elements -> { Rulename: value-separator } ^ { Rulename: value } ^ { Rulename: end-array }
+Rule name: number, elements -> Optional elements -> { Rulename: minus } ^ { Rulename: int } ^ Optional elements -> { Rulename: frac } ^ Optional elements -> { Rulename: exp }
+Rule name: decimal-point, elements -> { Rulename: hex %x2E }
+Rule name: digit1-9, elements -> { Rulename: hexrange %x31-39 }
+Rule name: e, elements -> { Rulename: hex %x65 } / { Rulename: hex %x45 }
+Rule name: exp, elements -> { Rulename: e } ^ Optional elements -> { Rulename: minus } / { Rulename: plus } ^ 1*{ Rulename: DIGIT }
+Rule name: frac, elements -> { Rulename: decimal-point } ^ 1*{ Rulename: DIGIT }
+Rule name: int, elements -> { Rulename: zero } / Sequence elements -> { Rulename: digit1-9 } ^ *{ Rulename: DIGIT }
+Rule name: minus, elements -> { Rulename: hex %x2D }
+Rule name: plus, elements -> { Rulename: hex %x2B }
+Rule name: zero, elements -> { Rulename: hex %x30 }
+Rule name: string, elements -> { Rulename: quotation-mark } ^ *{ Rulename: char } ^ { Rulename: quotation-mark }
+Rule name: char, elements -> { Rulename: unescaped } / { Rulename: escape } ^ Sequence elements -> { Rulename: hex %x22 } / { Rulename: hex %x5C } / { Rulename: hex %x2F } / { Rulename: hex %x62 } / { Rulename: hex %x66 } / { Rulename: hex %x6E } / { Rulename: hex %x72 } / { Rulename: hex %x74 } / { Rulename: hex %x75 } ^ 4{ Rulename: HEXDIG }
+Rule name: escape, elements -> { Rulename: hex %x5C }
+Rule name: quotation-mark, elements -> { Rulename: hex %x22 }
+Rule name: unescaped, elements -> { Rulename: hexrange %x20-21 } / { Rulename: hexrange %x23-5B } / { Rulename: hexrange %x5D-10FFFF }
+Rule name: HEXDIG, elements -> { Rulename: DIGIT } / { Rulename: hexrange %x41-46 } / { Rulename: hexrange %x61-66 }
+Rule name: DIGIT, elements -> { Rulename: hexrange %x30-39 }
+```
+
+Next, I need to refine the types in the AST, learn a little more OCaml, and do something *useful* with all this mess!
 
 ## Reference
 

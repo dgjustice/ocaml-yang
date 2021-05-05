@@ -29,17 +29,18 @@ let hex = ("%x") (hexdigit)+
 let hexrange = (hex) ('-') (hexdigit)+
 let hexcon = (hex) ('.' hexdigit+)+
 let termval = binary | decimal | hex
-let equals = '=' whitespace?
-let incequals = "=/" whitespace?
+let nonwhite = [^' ' '\t']+
 
 rule lex = parse
+  | rulename as s whitespace? '=' { RULEDEF (s) }
+  | rulename as s whitespace? "=/" { RULEDEFOPT (s) }
+  | whitespace { lex lexbuf }
+  | newline { next_line lexbuf; lex lexbuf }
   | "(" { LPAREN }
   | ")" { RPAREN }
   | "[" { LBRACK }
   | "]" { RBRACK }
   | "/" { FWDSLASH }
-  | incequals        { INCEQUALS }
-  | equals        { EQUALS }
   | '"'      { read_string (Buffer.create 17) lexbuf }
   | ";"        { read_single_line_comment lexbuf }
   | rptrange as s { RPTRANGE (s) }
@@ -54,11 +55,11 @@ rule lex = parse
   | hexcon as s { HEXCON (s) }
   | hex as s { HEX (s) }
   | whitespace { lex lexbuf }
-  | newline { next_line lexbuf; CRLF }
+  | newline { next_line lexbuf; lex lexbuf }
   | eof        { EOF }
-  | _ {raise (SyntaxError ("Lexer - Illegal character: " ^ Lexing.lexeme lexbuf)) }
+  | _ {raise (SyntaxError ("2Lexer - Illegal character: " ^ Lexing.lexeme lexbuf)) }
 and read_single_line_comment = parse
-  | newline { next_line lexbuf; CRLF }
+  | newline { next_line lexbuf; lex lexbuf }
   | eof { EOF }
   | _ { read_single_line_comment lexbuf }
 and read_string buf = parse

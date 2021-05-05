@@ -2,8 +2,6 @@ open Parser
 
 let print_tok tok =
   match tok with
-  | EQUALS -> print_string " EQUALS "
-  | INCEQUALS -> print_string " INCEQUALS "
   | FWDSLASH -> print_string " FWDSLASH "
   | LPAREN -> print_string " LPAREN "
   | RPAREN -> print_string " RPAREN "
@@ -13,6 +11,8 @@ let print_tok tok =
   | RPTRANGE s -> print_string (" RPTRANGE \"" ^ s ^ "\"")
   | STRING s -> print_string (" STRING \"" ^ s ^ "\"")
   | RULENAME s -> print_string (" RULENAME '" ^ s ^ "'")
+  | RULEDEF s -> print_string ("\nRULEDEF '" ^ s ^ "'")
+  | RULEDEFOPT s -> print_string ("\nRULEDEFOPT '" ^ s ^ "'")
   | BINARY s -> print_string (" BINARY " ^ s)
   | BINARYCON s -> print_string (" BINARYCON " ^ s)
   | BINARYRANGE s -> print_string (" BINARYRANGE " ^ s)

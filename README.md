@@ -429,6 +429,7 @@ It turns out that emiting tokens for whitespace is some sort of zen master trick
 - [delimited lists](http://gallium.inria.fr/blog/lr-lists/)
 - [compilers](https://lambda.uta.edu/cse5317/spring03/notes/node1.html)
 - [Bolt parser/lexer tutorial](https://mukulrathi.co.uk/create-your-own-programming-language/parsing-ocamllex-menhir/)
+- [OCamllex tutorial](http://www.iro.umontreal.ca/~monnier/3065/ocamllex-tutorial.pdf)
 
 ## TODO
 

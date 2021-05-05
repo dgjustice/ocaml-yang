@@ -1,11 +1,11 @@
-%token EQUALS
-%token INCEQUALS
 %token FWDSLASH
 %token LPAREN
 %token RPAREN
 %token RBRACK
 %token LBRACK
 %token CRLF
+%token <string> RULEDEF
+%token <string> RULEDEFOPT
 %token <string> RPTRANGE
 %token <string> STRING
 %token <string> RULENAME
@@ -36,9 +36,8 @@ rules:
 | EOF {[]}
 
 rule:
-| rn=RULENAME EQUALS e=expr CRLF* { Rules{name = rn; elements = [e]} }
-| rn=RULENAME INCEQUALS e=expr CRLF* { UnaryOpIncOr{name = rn; elements = [e]} }
-| CRLF { RuleElement(TermVal("empty line")) }
+| rn=RULEDEF e=expr { Rules{name = rn; elements = [e]} }
+| rn=RULEDEFOPT e=expr { UnaryOpIncOr{name = rn; elements = [e]} }
 
 element:
 | s=STRING  { RuleElement(Quotedstring(s)) }
@@ -55,8 +54,8 @@ element:
 
 expr:
 | e=element CRLF? {e}
-| e1=expr e2=expr { BinOpOr (e1, e2) }
 | r=RPTRANGE e=expr { RptRange{range=r; tree=e} }
+| e1=expr e2=expr { BinOpCon (e1, e2) }
 | e1=expr FWDSLASH e2=expr { BinOpOr (e1, e2) }
 | LPAREN e=expr RPAREN { SequenceGrp [e] }
 | LBRACK e=expr RBRACK { OptSequence [e] }

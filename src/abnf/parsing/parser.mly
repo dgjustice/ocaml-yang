@@ -18,7 +18,6 @@
 %token <string> HEX
 %token <string> HEXCON
 %token <string> HEXRANGE
-%token WSP
 %token EOF
 
 %{
@@ -41,15 +40,15 @@ rule:
 
 element:
 | s=STRING  { RuleElement(Quotedstring(s)) }
-| s=HEX  { RuleElement(TermVal("hex " ^ s)) }
-| s=HEXCON  { RuleElement(TermVal("hexcon " ^ s)) }
-| s=HEXRANGE  { RuleElement(TermVal("hexrange " ^ s)) }
-| s=BINARY  { RuleElement(TermVal("binary " ^ s)) }
-| s=BINARYCON  { RuleElement(TermVal("binarycon " ^ s)) }
-| s=BINARYRANGE  { RuleElement(TermVal("binaryrange " ^ s)) }
-| s=DECIMAL  { RuleElement(TermVal("decimal " ^ s)) }
-| s=DECIMALCON  { RuleElement(TermVal("decimalcon " ^ s)) }
-| s=DECIMALRANGE  { RuleElement(TermVal("decimalrange " ^ s)) }
+| s=HEX  { RuleElement(hex_of_string(s) |> Option.get |> TermVal) }
+| s=HEXCON  { RuleElement(hex_con_of_string(s) |> Option.get |> TermVal) }
+| s=HEXRANGE  { RuleElement(hex_range_of_string(s) |> Option.get |> TermVal) }
+| s=BINARY  { RuleElement(binary_of_string(s) |> Option.get |> TermVal) }
+| s=BINARYCON  { RuleElement(binary_con_of_string(s) |> Option.get |> TermVal) }
+| s=BINARYRANGE  { RuleElement(binary_range_of_string(s) |> Option.get |> TermVal) }
+| s=DECIMAL  { RuleElement(decimal_of_string(s) |> Option.get |> TermVal) }
+| s=DECIMALCON  { RuleElement(decimal_con_of_string(s) |> Option.get |> TermVal) }
+| s=DECIMALRANGE  { RuleElement(decimal_range_of_string(s) |> Option.get |> TermVal) }
 | s=RULENAME  { RuleElement(Rulename(s)) }
 
 expr:

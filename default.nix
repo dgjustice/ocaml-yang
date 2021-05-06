@@ -11,6 +11,7 @@ let
       nixpkgs.openssl
       nixpkgs.pkg-config
       ocamlPackages.utop
+      ocamlPackages.ocaml_pcre
       ocamlPackages.base
       ocamlPackages.core
       ocamlPackages.dune_2

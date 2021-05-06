@@ -10,12 +10,13 @@ let test_e2e fname _ =
       t |> to_str |> ( != ) "" |> assert_bool "expected non-empty string")
     (expr_of_string (Utils.load_file fname))
 
+let test_yang _ = todo "Need to update grammar"
 let suite =
   "suite"
   >::: [
          "test-RFC7159-JSON" >:: test_e2e "../rfc/rfc7159-json.abnf";
          "test-RFC5234-ABNF" >:: test_e2e "../rfc/rfc5234-abnf.abnf";
-         "test-RFC7950-YANG" >:: todo "Need to update grammar";
+         "test-RFC7950-YANG" >:: test_yang;
        ]
 
 let () = run_test_tt_main suite

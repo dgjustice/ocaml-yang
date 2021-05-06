@@ -22,7 +22,6 @@ let print_tok tok =
   | HEX s -> print_string (" HEX " ^ s)
   | HEXCON s -> print_string (" HEXCON " ^ s)
   | HEXRANGE s -> print_string (" HEXRANGE " ^ s)
-  | WSP -> print_string " WSP "
   | EOF -> print_string " EOF\n"
 
 let debug_tokens test_str =

@@ -462,6 +462,10 @@ Rule name: DIGIT, elements -> { Rulename: hexrange %x30-39 }
 
 Next, I need to refine the types in the AST, learn a little more OCaml, and do something *useful* with all this mess!
 
+And tests... *moar* tests!
+
+
+
 ## Reference
 
 - [Menhir](http://gallium.inria.fr/~fpottier/menhir/manual.html)

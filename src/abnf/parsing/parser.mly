@@ -38,6 +38,8 @@ rule:
 | rn=RULEDEF e=expr { Rules{name = rn; elements = [e]} }
 | rn=RULEDEFOPT e=expr { UnaryOpIncOr{name = rn; elements = [e]} }
 
+// Data validation (e.g. valid range) is done in the "_of_string" functions
+// Option.get fails these on a bad constructor
 element:
 | s=STRING  { RuleElement(Quotedstring(s)) }
 | s=HEX  { RuleElement(hex_of_string(s) |> Option.get |> TermVal) }

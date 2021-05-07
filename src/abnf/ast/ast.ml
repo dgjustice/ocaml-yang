@@ -31,11 +31,14 @@ let rec to_str = function
       | Quotedstring s -> Printf.sprintf "{ Quotedstring: '%s' }" s
       | Rulename s -> Printf.sprintf "{ Rulename: '%s' }" s
       | TermVal t -> (
-        match t with
-        | Int i -> Printf.sprintf "{ Int: %d }" i
-        | TermRange r -> Printf.sprintf "{ TermRange: {low: %d; high: %d }}" r.lower r.upper
-        | TermCon c -> Printf.sprintf "{ TermCon: [%s] }" (str_join ";" (List.map (Printf.sprintf "%d") c.values))
-      ))
+          match t with
+          | Int i -> Printf.sprintf "{ Int: %d }" i
+          | TermRange r ->
+              Printf.sprintf "{ TermRange: {low: %d; high: %d }}" r.lower
+                r.upper
+          | TermCon c ->
+              Printf.sprintf "{ TermCon: [%s] }"
+                (str_join ";" (List.map (Printf.sprintf "%d") c.values))))
   | Rules s ->
       Printf.sprintf "Rule name: '%s', elements -> %s" s.name
         (str_join ", " (List.map to_str s.elements))
@@ -53,28 +56,28 @@ let rec to_str = function
         (str_join ", " (List.map to_str s))
 
 let decimal_of_string s =
-  let r = Str.regexp "%d\\([0-9]+\\)" in
+  let r = Str.regexp "^%d\\([0-9]+\\)$" in
   let m = Str.string_match r s 0 in
   match m with
   | true -> Some (Int (int_of_string (Str.matched_group 1 s)))
   | false -> None
 
 let hex_of_string s =
-  let r = Str.regexp "%x\\([a-f,A-F,0-9]+\\)" in
+  let r = Str.regexp "^%x\\([a-f,A-F,0-9]+\\)$" in
   let m = Str.string_match r s 0 in
   match m with
   | true -> Some ("0x" ^ Str.matched_group 1 s |> int_of_string |> Int)
   | false -> None
 
 let binary_of_string s =
-  let r = Str.regexp "%b\\([0-1]+\\)" in
+  let r = Str.regexp "^%b\\([0-1]+\\)$" in
   let m = Str.string_match r s 0 in
   match m with
   | true -> Some ("0b" ^ Str.matched_group 1 s |> int_of_string |> Int)
   | false -> None
 
 let decimal_range_of_string s =
-  let r = Str.regexp "%d\\([0-9]+\\)-\\([0-9]+\\)" in
+  let r = Str.regexp "^%d\\([0-9]+\\)-\\([0-9]+\\)$" in
   let m = Str.string_match r s 0 in
   match m with
   | true -> (
@@ -86,7 +89,7 @@ let decimal_range_of_string s =
   | false -> None
 
 let hex_range_of_string s =
-  let r = Str.regexp "%x\\([a-f,A-F,0-9]+\\)-\\([a-f,A-F,0-9]+\\)" in
+  let r = Str.regexp "^%x\\([a-f,A-F,0-9]+\\)-\\([a-f,A-F,0-9]+\\)$" in
   let m = Str.string_match r s 0 in
   match m with
   | true -> (
@@ -98,7 +101,7 @@ let hex_range_of_string s =
   | false -> None
 
 let binary_range_of_string s =
-  let r = Str.regexp "%b\\([0-1]+\\)-\\([0-1]+\\)" in
+  let r = Str.regexp "^%b\\([0-1]+\\)-\\([0-1]+\\)$" in
   let m = Str.string_match r s 0 in
   match m with
   | true -> (
@@ -110,7 +113,7 @@ let binary_range_of_string s =
   | false -> None
 
 let decimal_con_of_string s =
-  let r = Str.regexp "%d\\([0-9]+\\)\\(\\(\\.[0-9]+\\)+\\)" in
+  let r = Str.regexp "^%d\\([0-9]+\\)\\(\\(\\.[0-9]+\\)+\\)$" in
   let m = Str.string_match r s 0 in
   match m with
   | true ->
@@ -120,21 +123,25 @@ let decimal_con_of_string s =
   | false -> None
 
 let hex_con_of_string s =
-  let r = Str.regexp "%x\\([a-f,A-F,0-9]+\\)\\(\\(\\.[a-f,A-F,0-9]+\\)+\\)" in
+  let r = Str.regexp "^%x\\([a-f,A-F,0-9]+\\)\\(\\(\\.[a-f,A-F,0-9]+\\)+\\)$" in
   let m = Str.string_match r s 0 in
   match m with
   | true ->
       let h = "0x" ^ Str.matched_group 1 s |> int_of_string in
       let t = Str.matched_group 2 s |> Str.split (Str.regexp "\\.") in
-      Some (TermCon { values = h :: List.map (fun v -> "0x" ^ v |> int_of_string) t })
+      Some
+        (TermCon
+           { values = h :: List.map (fun v -> "0x" ^ v |> int_of_string) t })
   | false -> None
 
 let binary_con_of_string s =
-  let r = Str.regexp "%d\\([0-1]+\\)\\(\\(\\.[0-1]+\\)+\\)" in
+  let r = Str.regexp "^%b\\([0-1]+\\)\\(\\(\\.[0-1]+\\)+\\)$" in
   let m = Str.string_match r s 0 in
   match m with
   | true ->
       let h = "0b" ^ Str.matched_group 1 s |> int_of_string in
       let t = Str.matched_group 2 s |> Str.split (Str.regexp "\\.") in
-      Some (TermCon { values = h :: List.map (fun v -> "0b" ^ v |> int_of_string) t })
+      Some
+        (TermCon
+           { values = h :: List.map (fun v -> "0b" ^ v |> int_of_string) t })
   | false -> None

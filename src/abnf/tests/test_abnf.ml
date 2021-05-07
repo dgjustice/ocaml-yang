@@ -127,10 +127,9 @@ let test_binary_range_of_string (s, v) _ =
 let suite =
   "suite"
   >::: [
-         "test-RFC7159-JSON" >:: test_e2e "../rfc/rfc7159-json.abnf";
-         "test-RFC5234-ABNF" >:: test_e2e "../rfc/rfc5234-abnf.abnf";
-         "test-RFC7950-YANG" >:: test_yang;
-         (* "test-decimal-of-string" >:: test_decimal_of_string; *)
+         (* "test-RFC7159-JSON" >:: test_e2e "../rfc/rfc7159-json.abnf";
+         "test-RFC5234-ABNF" >:: test_e2e "../rfc/rfc5234-abnf.abnf"; *)
+         (* "test-RFC7950-YANG" >:: test_yang; *)
        ]
        @ List.map
            (fun c ->

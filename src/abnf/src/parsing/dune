@@ -1,7 +1,8 @@
 (library
  (libraries ast)
+ (instrumentation (backend bisect_ppx))
  (preprocess
-  (pps ppx_jane bisect_ppx --conditional))
+  (pps ppx_jane))
  (lint
   (pps ppx_js_style -annotated-ignores -styler -pretty -dated-deprecation))
  (name parsing))

@@ -196,7 +196,7 @@ It's probably a goood idea to check in on where we're at.
 --- | --- | ---
 |✅ | 2.1 Rule Naming | |
 |✅ | 2.2 Rule Form |Done with the binary operator implementation, but not indent-aware.  I don't _think_ this matters.|
-|☑ | 2.3 Terminal Values |Need to add types to AST|
+|✅ | 2.3 Terminal Values |Need to add types to AST|
 |[ ] | 2.4 External encodings |🤷|
 |✅ | 3.1 Concatenation |As a binary op |
 |✅ | 3.2 Alternatives |As a binary op |

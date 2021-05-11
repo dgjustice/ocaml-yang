@@ -55,7 +55,7 @@ element:
 
 expr:
 | e=element CRLF? {e}
-| r=RPTRANGE e=expr { RptRange{range=r; tree=e} }
+| r=RPTRANGE e=expr { RptRange{range=rpt_range_of_string(r) |> Option.get ; tree=e} }
 | e1=expr e2=expr { BinOpCon (e1, e2) }
 | e1=expr FWDSLASH e2=expr { BinOpOr (e1, e2) }
 | LPAREN e=expr RPAREN { SequenceGrp [e] }

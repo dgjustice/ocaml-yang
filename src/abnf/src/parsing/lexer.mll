@@ -16,7 +16,7 @@ let alpha = ['a'-'z' 'A'-'Z']
 let digit = ['0'-'9']
 let whitespace = [' ' '\t']+
 let newline = '\r' | '\n' | "\r\n"
-let rptrange = (digit+)? ('*')? (digit+)?
+let rptrange = (digit+)? '*'? (digit+)?
 let rulename = (alpha) (alpha|digit|'-')*
 let binary = ("%b") (['0' '1'])+
 let binrange = (binary) ('-') (['0' '1'])+
@@ -41,8 +41,8 @@ rule lex = parse
   | "[" { LBRACK }
   | "]" { RBRACK }
   | "/" { FWDSLASH }
-  | '"'      { read_string (Buffer.create 17) lexbuf }
-  | ";"        { read_single_line_comment lexbuf }
+  | '"' { read_string (Buffer.create 17) lexbuf }
+  | ";" { read_single_line_comment lexbuf }
   | rptrange as s { RPTRANGE (s) }
   | rulename as s { RULENAME (s) }
   | binrange as s { BINARYRANGE (s) }

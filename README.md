@@ -207,7 +207,7 @@ It's probably a goood idea to check in on where we're at.
 |✅ | 3.7 Specific Repitition | |
 |✅ | 3.8 Optional Sequence | |
 |✅ | 3.9 Comment | |
-|[ ] | 3.10 Operator Precedence | |
+|[ ] | 3.10 Operator Precedence |Shift-reduce conflicts need to be fixed |
 
 ### ABNF AST, version 1
 
@@ -476,6 +476,7 @@ And tests... *moar* tests!
 - [compilers](https://lambda.uta.edu/cse5317/spring03/notes/node1.html)
 - [Bolt parser/lexer tutorial](https://mukulrathi.co.uk/create-your-own-programming-language/parsing-ocamllex-menhir/)
 - [OCamllex tutorial](http://www.iro.umontreal.ca/~monnier/3065/ocamllex-tutorial.pdf)
+- [Menhir error-handling](https://baturin.org/blog/declarative-parse-error-reporting-with-menhir/)
 
 ## TODO
 

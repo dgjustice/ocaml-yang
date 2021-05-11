@@ -1,6 +1,4 @@
-type term_range = { lower : int; upper : int }
-
-type term_con = { values : int list }
+type range_num = RangeInt of int | Infinity
 
 type element =
   | Quotedstring of string
@@ -9,21 +7,30 @@ type element =
 
 and termval = Int of int | TermRange of term_range | TermCon of term_con
 
+and term_con = { values : int list }
+
+and term_range = { lower : int; upper : int }
+
 type abnf_tree =
   | RuleElement of element
   | Rules of { name : string; elements : abnf_tree list }
   | BinOpOr of abnf_tree * abnf_tree
   | BinOpCon of abnf_tree * abnf_tree
   | UnaryOpIncOr of { name : string; elements : abnf_tree list }
-  | RptRange of { range : string; tree : abnf_tree }
+  | RptRange of { range : rpt_range; tree : abnf_tree }
   | SequenceGrp of abnf_tree list
   | OptSequence of abnf_tree list
+
+and rpt_range = { lower : range_num; upper : range_num }
 
 let rec str_join ch str_list =
   match str_list with
   | [] -> ""
   | [ hd ] -> hd
   | hd :: tl -> hd ^ ch ^ str_join ch tl
+
+let range_num_to_str r =
+  match r with RangeInt r -> Printf.sprintf "%d" r | Infinity -> "∞"
 
 let rec to_str = function
   | RuleElement s -> (
@@ -47,7 +54,11 @@ let rec to_str = function
   | UnaryOpIncOr s ->
       Printf.sprintf "=/ Rule name: '%s', elements -> %s" s.name
         (str_join ", " (List.map to_str s.elements))
-  | RptRange r -> Printf.sprintf "%s of ( %s )" r.range (to_str r.tree)
+  | RptRange r ->
+      Printf.sprintf "%s-%s of ( %s )"
+        (range_num_to_str r.range.lower)
+        (range_num_to_str r.range.upper)
+        (to_str r.tree)
   | SequenceGrp s ->
       Printf.sprintf "Sequence elements -> %s"
         (str_join ", " (List.map to_str s))
@@ -144,4 +155,30 @@ let binary_con_of_string s =
       Some
         (TermCon
            { values = h :: List.map (fun v -> "0b" ^ v |> int_of_string) t })
+  | false -> None
+
+(* This could use refactoring for clarity *)
+let rpt_range_of_string s =
+  let r = Str.regexp "^\\([0-9]+\\)?\\*?\\([0-9]+\\)?$" in
+  let m = Str.string_match r s 0 in
+  match m with
+  | true -> (
+      let a =
+        (* `a` and `b` are optional in the pattern *)
+        try Some (Str.matched_group 1 s |> int_of_string)
+        with Not_found -> None
+      in
+      let b =
+        try Some (Str.matched_group 2 s |> int_of_string)
+        with Not_found -> None
+      in
+      match (a, b) with
+      (* Check for a valid range *)
+      | Some a, Some b -> (
+          match a <= b with
+          | true -> Some { lower = RangeInt a; upper = RangeInt b }
+          | false -> None)
+      | Some a, None -> Some { lower = RangeInt a; upper = Infinity }
+      | None, Some b -> Some { lower = RangeInt 0; upper = RangeInt b }
+      | None, None -> Some { lower = RangeInt 0; upper = Infinity })
   | false -> None

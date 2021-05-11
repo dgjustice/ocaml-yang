@@ -1,5 +1,5 @@
 (test
- (name test_lexer)
+ (name test_abnf)
  (libraries ounit2 parsing ast)
  (lint
   (pps ppx_js_style -check-doc-comments -annotated-ignores -styler -pretty

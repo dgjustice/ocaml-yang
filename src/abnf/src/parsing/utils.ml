@@ -22,7 +22,7 @@ let print_tok tok =
   | HEX s -> print_string (" HEX " ^ s)
   | HEXCON s -> print_string (" HEXCON " ^ s)
   | HEXRANGE s -> print_string (" HEXRANGE " ^ s)
-  | EOF -> print_string " EOF\n"
+  | EOF -> print_string "\nEOF\n"
 
 let debug_tokens test_str =
   let buff = Lexing.from_string test_str in

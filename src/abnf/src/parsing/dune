@@ -1,6 +1,5 @@
 (library
  (libraries ast)
- (instrumentation (backend bisect_ppx))
  (preprocess
   (pps ppx_jane))
  (lint

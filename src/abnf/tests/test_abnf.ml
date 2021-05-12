@@ -14,10 +14,10 @@ let test_yang _ = todo "Need to update grammar"
 
 let decimal_of_string_cases =
   [
-    ("%d0", Some (Int 0));
-    ("%d42", Some (Int 42));
+    ("%d0", Some (TermInt 0));
+    ("%d42", Some (TermInt 42));
     ("%d4a", None);
-    ("%d999", Some (Int 999));
+    ("%d999", Some (TermInt 999));
   ]
 
 let test_decimal_of_string (s, v) _ = assert_equal (decimal_of_string s) v
@@ -51,10 +51,10 @@ let test_decimal_range_of_string (s, v) _ =
 
 let hex_of_string_cases =
   [
-    ("%x0", Some (Int 0));
-    ("%x42", Some (Int 66));
-    ("%x4a", Some (Int 74));
-    ("%x999", Some (Int 2457));
+    ("%x0", Some (TermInt 0));
+    ("%x42", Some (TermInt 66));
+    ("%x4a", Some (TermInt 74));
+    ("%x999", Some (TermInt 2457));
     ("%d42", None);
   ]
 
@@ -77,7 +77,7 @@ let hex_range_of_string_cases =
   [
     ("%x0", None);
     ("%x42-43", Some (TermRange { lower = 66; upper = 67 }));
-    ("%x4-43a", Some (TermRange {lower = 4; upper = 1082}));
+    ("%x4-43a", Some (TermRange { lower = 4; upper = 1082 }));
     ("%x43-42", None);
     ("%x42-42", Some (TermRange { lower = 66; upper = 66 }));
     ("%x0-99999", Some (TermRange { lower = 0; upper = 629145 }));
@@ -88,11 +88,11 @@ let test_hex_range_of_string (s, v) _ = assert_equal (hex_range_of_string s) v
 
 let binary_of_string_cases =
   [
-    ("%b0", Some (Int 0));
-    ("%b01", Some (Int 1));
+    ("%b0", Some (TermInt 0));
+    ("%b01", Some (TermInt 1));
     ("%b4a", None);
     ("%b42", None);
-    ("%b10101", Some (Int 21));
+    ("%b10101", Some (TermInt 21));
   ]
 
 let test_binary_of_string (s, v) _ = assert_equal (binary_of_string s) v
@@ -124,33 +124,53 @@ let binary_range_of_string_cases =
 let test_binary_range_of_string (s, v) _ =
   assert_equal (binary_range_of_string s) v
 
+let rpt_range_of_string_cases =
+  [
+    ("*foo", None);
+    ("*", Some { lower = RangeInt 0; upper = Infinity });
+    ("foo*", None);
+    ("42", Some { lower = RangeInt 42; upper = RangeInt 42 });
+    ("42*", Some { lower = RangeInt 42; upper = Infinity });
+    ("*42", Some { lower = RangeInt 0; upper = RangeInt 42 });
+    ("21*42", Some { lower = RangeInt 21; upper = RangeInt 42 });
+    ("42*21", None);
+    ("42*b", None);
+  ]
+
+let test_rpt_range_of_string (s, v) _ = assert_equal (rpt_range_of_string s) v
+
 let suite =
   "suite"
-  >::: [
-         (* "test-RFC7159-JSON" >:: test_e2e "../rfc/rfc7159-json.abnf";
-         "test-RFC5234-ABNF" >:: test_e2e "../rfc/rfc5234-abnf.abnf"; *)
-         (* "test-RFC7950-YANG" >:: test_yang; *)
-       ]
+  >::: [ (* "test-RFC7159-JSON" >:: test_e2e "../rfc/rfc7159-json.abnf";
+            "test-RFC5234-ABNF" >:: test_e2e "../rfc/rfc5234-abnf.abnf"; *)
+         (* "test-RFC7950-YANG" >:: test_yang; *) ]
        @ List.map
            (fun c ->
              Printf.sprintf "test decimal '%s'" (fst c)
              >:: test_decimal_of_string c)
            decimal_of_string_cases
        @ List.map
-           (fun c -> Printf.sprintf "test decimal '%s'" (fst c) >:: test_decimal_con_of_string c)
+           (fun c ->
+             Printf.sprintf "test decimal '%s'" (fst c)
+             >:: test_decimal_con_of_string c)
            decimal_con_of_string_cases
        @ List.map
-           (fun c -> Printf.sprintf "test decimal '%s'" (fst c) >:: test_decimal_range_of_string c)
+           (fun c ->
+             Printf.sprintf "test decimal '%s'" (fst c)
+             >:: test_decimal_range_of_string c)
            decimal_range_of_string_cases
        @ List.map
            (fun c ->
              Printf.sprintf "test hex '%s'" (fst c) >:: test_hex_of_string c)
            hex_of_string_cases
        @ List.map
-           (fun c -> Printf.sprintf "test hex '%s'" (fst c) >:: test_hex_con_of_string c)
+           (fun c ->
+             Printf.sprintf "test hex '%s'" (fst c) >:: test_hex_con_of_string c)
            hex_con_of_string_cases
        @ List.map
-           (fun c -> Printf.sprintf "test hex '%s'" (fst c) >:: test_hex_range_of_string c)
+           (fun c ->
+             Printf.sprintf "test hex '%s'" (fst c)
+             >:: test_hex_range_of_string c)
            hex_range_of_string_cases
        @ List.map
            (fun c ->
@@ -158,10 +178,19 @@ let suite =
              >:: test_binary_of_string c)
            binary_of_string_cases
        @ List.map
-           (fun c -> Printf.sprintf "test binary '%s'" (fst c) >:: test_binary_con_of_string c)
+           (fun c ->
+             Printf.sprintf "test binary '%s'" (fst c)
+             >:: test_binary_con_of_string c)
            binary_con_of_string_cases
        @ List.map
-           (fun c -> Printf.sprintf "test binary '%s'" (fst c) >:: test_binary_range_of_string c)
+           (fun c ->
+             Printf.sprintf "test binary '%s'" (fst c)
+             >:: test_binary_range_of_string c)
            binary_range_of_string_cases
+       @ List.map
+           (fun c ->
+             Printf.sprintf "test rpt_range '%s'" (fst c)
+             >:: test_rpt_range_of_string c)
+           rpt_range_of_string_cases
 
 let () = run_test_tt_main suite

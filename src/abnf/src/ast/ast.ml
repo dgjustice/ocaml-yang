@@ -5,7 +5,7 @@ type element =
   | Rulename of string
   | TermVal of termval
 
-and termval = Int of int | TermRange of term_range | TermCon of term_con
+and termval = TermInt of int | TermRange of term_range | TermCon of term_con
 
 and term_con = { values : int list }
 
@@ -39,7 +39,7 @@ let rec to_str = function
       | Rulename s -> Printf.sprintf "{ Rulename: '%s' }" s
       | TermVal t -> (
           match t with
-          | Int i -> Printf.sprintf "{ Int: %d }" i
+          | TermInt i -> Printf.sprintf "{ Int: %d }" i
           | TermRange r ->
               Printf.sprintf "{ TermRange: {low: %d; high: %d }}" r.lower
                 r.upper
@@ -70,21 +70,21 @@ let decimal_of_string s =
   let r = Str.regexp "^%d\\([0-9]+\\)$" in
   let m = Str.string_match r s 0 in
   match m with
-  | true -> Some (Int (int_of_string (Str.matched_group 1 s)))
+  | true -> Some (TermInt (int_of_string (Str.matched_group 1 s)))
   | false -> None
 
 let hex_of_string s =
   let r = Str.regexp "^%x\\([a-f,A-F,0-9]+\\)$" in
   let m = Str.string_match r s 0 in
   match m with
-  | true -> Some ("0x" ^ Str.matched_group 1 s |> int_of_string |> Int)
+  | true -> Some ("0x" ^ Str.matched_group 1 s |> int_of_string |> TermInt)
   | false -> None
 
 let binary_of_string s =
   let r = Str.regexp "^%b\\([0-1]+\\)$" in
   let m = Str.string_match r s 0 in
   match m with
-  | true -> Some ("0b" ^ Str.matched_group 1 s |> int_of_string |> Int)
+  | true -> Some ("0b" ^ Str.matched_group 1 s |> int_of_string |> TermInt)
   | false -> None
 
 let decimal_range_of_string s =
@@ -159,7 +159,7 @@ let binary_con_of_string s =
 
 (* This could use refactoring for clarity *)
 let rpt_range_of_string s =
-  let r = Str.regexp "^\\([0-9]+\\)?\\*?\\([0-9]+\\)?$" in
+  let r = Str.regexp "^\\([0-9]+\\)?\\(\\*\\)?\\([0-9]+\\)?$" in
   let m = Str.string_match r s 0 in
   match m with
   | true -> (
@@ -168,17 +168,22 @@ let rpt_range_of_string s =
         try Some (Str.matched_group 1 s |> int_of_string)
         with Not_found -> None
       in
+      let w = try Some (Str.matched_group 2 s) with Not_found -> None in
       let b =
-        try Some (Str.matched_group 2 s |> int_of_string)
+        try Some (Str.matched_group 3 s |> int_of_string)
         with Not_found -> None
       in
-      match (a, b) with
+      match (a, b, w) with
       (* Check for a valid range *)
-      | Some a, Some b -> (
+      | Some _, Some _, None -> None (* Invalid regex case *)
+      | None, Some _, None -> None (* Invalid regex case *)
+      | None, None, None -> None (* Invalid regex case *)
+      | Some a, None, None -> Some { lower = RangeInt a; upper = RangeInt a }
+      | Some a, Some b, Some _ -> (
           match a <= b with
           | true -> Some { lower = RangeInt a; upper = RangeInt b }
           | false -> None)
-      | Some a, None -> Some { lower = RangeInt a; upper = Infinity }
-      | None, Some b -> Some { lower = RangeInt 0; upper = RangeInt b }
-      | None, None -> Some { lower = RangeInt 0; upper = Infinity })
+      | Some a, None, Some _ -> Some { lower = RangeInt a; upper = Infinity }
+      | None, Some b, Some _ -> Some { lower = RangeInt 0; upper = RangeInt b }
+      | None, None, Some _ -> Some { lower = RangeInt 0; upper = Infinity })
   | false -> None

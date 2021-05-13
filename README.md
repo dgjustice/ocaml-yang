@@ -571,5 +571,5 @@ let suite =
 
 ## TODO
 
-- Create types in the AST to match termvals
-- Nuke my env and make sure I can rebuild from scratch
+- Shift/reduce conflicts in the parser
+

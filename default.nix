@@ -7,9 +7,11 @@ let
   
     buildInputs = with nixpkgs; [
       nixpkgs.opam
+      nixpkgs.ocaml
       nixpkgs.gmp
       nixpkgs.openssl
       nixpkgs.pkg-config
+      ocamlPackages.findlib
       ocamlPackages.utop
       ocamlPackages.ocaml_pcre
       ocamlPackages.base

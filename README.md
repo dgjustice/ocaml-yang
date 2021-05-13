@@ -35,12 +35,12 @@ Ran: 63 tests in: 0.13 seconds.
 OK
                      
 $ bisect-ppx-report summary
-Coverage: 111/154 (72.08%)
+Coverage: 147/154 (95.45%)
 
 $
 $ find ./{tests,src}/ -name *.ml  -exec ocamlformat -i {} \;
 
-$
+$ 
 ```
 
 ## Integer-value expression parser
@@ -487,7 +487,75 @@ Next, I need to refine the types in the AST, learn a little more OCaml, and do s
 
 And tests... *moar* tests!
 
+### Parse, don't validate
 
+Following the above mantra, everything builds now with validated constructors.
+
+```console
+Rule name: 'JSON-text', elements -> { Rulename: 'object' } / { Rulename: 'array' }
+Rule name: 'begin-array', elements -> { Rulename: 'ws' } ^ { Int: 91 } ^ { Rulename: 'ws' }
+Rule name: 'begin-object', elements -> { Rulename: 'ws' } ^ { Int: 123 } ^ { Rulename: 'ws' }
+Rule name: 'end-array', elements -> { Rulename: 'ws' } ^ { Int: 93 } ^ { Rulename: 'ws' }
+Rule name: 'end-object', elements -> { Rulename: 'ws' } ^ { Int: 125 } ^ { Rulename: 'ws' }
+Rule name: 'name-separator', elements -> { Rulename: 'ws' } ^ { Int: 58 } ^ { Rulename: 'ws' }
+Rule name: 'value-separator', elements -> { Rulename: 'ws' } ^ { Int: 44 } ^ { Rulename: 'ws' }
+Rule name: 'ws', elements -> 0-∞ of ( Sequence elements -> { Int: 32 } / { Int: 9 } / { Int: 10 } / { Int: 13 } )
+Rule name: 'value', elements -> { Rulename: 'false' } / { Rulename: 'null' } / { Rulename: 'true' } / { Rulename: 'object' } / { Rulename: 'array' } / { Rulename: 'number' } / { Rulename: 'string' }
+Rule name: 'false', elements -> { TermCon: [102;97;108;115;101] }
+Rule name: 'null', elements -> { TermCon: [110;117;108;108] }
+Rule name: 'true', elements -> { TermCon: [116;114;117;101] }
+Rule name: 'object', elements -> { Rulename: 'begin-object' } ^ Optional elements -> { Rulename: 'member' } ^ 0-∞ of ( Sequence elements -> { Rulename: 'value-separator' } ^ { Rulename: 'member' } ) ^ { Rulename: 'end-object' }
+Rule name: 'member', elements -> { Rulename: 'string' } ^ { Rulename: 'name-separator' } ^ { Rulename: 'value' }
+Rule name: 'array', elements -> { Rulename: 'begin-array' } ^ Optional elements -> { Rulename: 'value' } ^ 0-∞ of ( Sequence elements -> { Rulename: 'value-separator' } ^ { Rulename: 'value' } ) ^ { Rulename: 'end-array' }
+Rule name: 'number', elements -> Optional elements -> { Rulename: 'minus' } ^ { Rulename: 'int' } ^ Optional elements -> { Rulename: 'frac' } ^ Optional elements -> { Rulename: 'exp' }
+Rule name: 'decimal-point', elements -> { Int: 46 }
+Rule name: 'digit1-9', elements -> { TermRange: {low: 49; high: 57 }}
+Rule name: 'e', elements -> { Int: 101 } / { Int: 69 }
+Rule name: 'exp', elements -> { Rulename: 'e' } ^ Optional elements -> { Rulename: 'minus' } / { Rulename: 'plus' } ^ 1-∞ of ( { Rulename: 'DIGIT' } )
+Rule name: 'frac', elements -> { Rulename: 'decimal-point' } ^ 1-∞ of ( { Rulename: 'DIGIT' } )
+Rule name: 'int', elements -> { Rulename: 'zero' } / Sequence elements -> { Rulename: 'digit1-9' } ^ 0-∞ of ( { Rulename: 'DIGIT' } )
+Rule name: 'minus', elements -> { Int: 45 }
+Rule name: 'plus', elements -> { Int: 43 }
+Rule name: 'zero', elements -> { Int: 48 }
+Rule name: 'string', elements -> { Rulename: 'quotation-mark' } ^ 0-∞ of ( { Rulename: 'char' } ^ { Rulename: 'quotation-mark' } )
+Rule name: 'char', elements -> { Rulename: 'unescaped' } / { Rulename: 'escape' } ^ Sequence elements -> { Int: 34 } / { Int: 92 } / { Int: 47 } / { Int: 98 } / { Int: 102 } / { Int: 110 } / { Int: 114 } / { Int: 116 } / { Int: 117 } ^ 4-4 of ( { Rulename: 'HEXDIG' } )
+Rule name: 'escape', elements -> { Int: 92 }
+Rule name: 'quotation-mark', elements -> { Int: 34 }
+Rule name: 'unescaped', elements -> { TermRange: {low: 32; high: 33 }} / { TermRange: {low: 35; high: 91 }} / { TermRange: {low: 93; high: 1114111 }}
+Rule name: 'HEXDIG', elements -> { Rulename: 'DIGIT' } / { TermRange: {low: 65; high: 70 }} / { TermRange: {low: 97; high: 102 }}
+Rule name: 'DIGIT', elements -> { TermRange: {low: 48; high: 57 }}
+```
+
+### Testing
+
+OCaml is a bit of a niche language, so there isn't a ton of examples to work off of, nor are there a bunch of libraries to do everything under the sun like Python.
+My tests aren't comprehensive by any stretch of the imagination, but I did manage to hack together a sort of table-style test like you might encounter with Golang test tables or Pytest's `parametrize` decorator.
+
+```ocaml
+let rpt_range_of_string_cases =
+  [
+    ("*foo", None);
+    ("*", Some { lower = RangeInt 0; upper = Infinity });
+    ("foo*", None);
+    ("42", Some { lower = RangeInt 42; upper = RangeInt 42 });
+    ("42*", Some { lower = RangeInt 42; upper = Infinity });
+    ("*42", Some { lower = RangeInt 0; upper = RangeInt 42 });
+    ("21*42", Some { lower = RangeInt 21; upper = RangeInt 42 });
+    ("42*21", None);
+    ("42*b", None);
+  ]
+
+let test_rpt_range_of_string (s, v) _ = assert_equal (rpt_range_of_string s) v
+
+let suite =
+  "suite"
+  >::: [
+       @ List.map
+           (fun c ->
+             Printf.sprintf "test rpt range '%s'" (fst c)
+             >:: test_rpt_range_of_string c)
+           rpt_range_of_string_cases
+```
 
 ## Reference
 

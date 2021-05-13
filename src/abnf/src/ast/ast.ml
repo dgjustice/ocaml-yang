@@ -1,5 +1,3 @@
-type range_num = RangeInt of int | Infinity
-
 type element =
   | Quotedstring of string
   | Rulename of string
@@ -22,6 +20,8 @@ type abnf_tree =
   | OptSequence of abnf_tree list
 
 and rpt_range = { lower : range_num; upper : range_num }
+
+and range_num = RangeInt of int | Infinity
 
 let rec str_join ch str_list =
   match str_list with

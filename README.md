@@ -16,8 +16,31 @@ nix-shell
 ## Build
 
 ```shell
+$ cd src/abnf
+
 $ dune build
-$ dune exec ./main.exe
+
+$ dune exec ./src/main.exe
+```
+
+## Test and Lint
+
+Currently, `src/abnf/src/ast` is the only tested/covered module.
+
+```shell
+$ dune runtest --instrument-with bisect_ppx --force
+   test_abnf alias tests/runtest
+...............................................................
+Ran: 63 tests in: 0.13 seconds.
+OK
+                     
+$ bisect-ppx-report summary
+Coverage: 111/154 (72.08%)
+
+$
+$ find ./{tests,src}/ -name *.ml  -exec ocamlformat -i {} \;
+
+$
 ```
 
 ## Integer-value expression parser

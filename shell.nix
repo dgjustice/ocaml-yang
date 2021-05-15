@@ -1,6 +1,7 @@
 let
-  nixpkgs = import <nixpkgs> {};
+  nixpkgs = import <nixpkgs-unstable> {};
   inherit (nixpkgs) stdenv fetchurl which;
+  unpackPhase = "true";
 
   myenv = stdenv.mkDerivation rec {
     name = "env";
@@ -8,22 +9,22 @@ let
     buildInputs = with nixpkgs; [
       nixpkgs.opam
       nixpkgs.ocaml
+      nixpkgs.ocamlformat
       nixpkgs.gmp
       nixpkgs.openssl
       nixpkgs.pkg-config
       ocamlPackages.findlib
       ocamlPackages.utop
-      ocamlPackages.ocaml_pcre
       ocamlPackages.base
       ocamlPackages.core
       ocamlPackages.dune_2
-      ocamlPackages.async
-      ocamlPackages.yojson
       ocamlPackages.menhir
-      ocamlPackages.core_extended
-      ocamlPackages.core_bench
+      ocamlPackages.uutf
+      ocamlPackages.ppx_jane
+      ocamlPackages.ppx_tools_versioned
+      # Testing deps
+      ocamlPackages.ounit2
       ocamlPackages.bisect_ppx
-      ocamlPackages.fmt
       ocamlPackages.ocaml-lsp
     ];
   

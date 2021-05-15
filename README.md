@@ -572,4 +572,5 @@ let suite =
 ## TODO
 
 - Shift/reduce conflicts in the parser
-
+- Include `glibc.static` in buildInputs in shell.nix to statically link executable for tiny can-tainerz.
+- Figure out conflicts with dune/bisect/janeppx

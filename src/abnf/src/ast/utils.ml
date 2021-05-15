@@ -1,27 +1,4 @@
-type element =
-  | Quotedstring of string
-  | Rulename of string
-  | TermVal of termval
-
-and termval = TermInt of int | TermRange of term_range | TermCon of term_con
-
-and term_con = { values : int list }
-
-and term_range = { lower : int; upper : int }
-
-type abnf_tree =
-  | RuleElement of element
-  | Rules of { name : string; elements : abnf_tree list }
-  | BinOpOr of abnf_tree * abnf_tree
-  | BinOpCon of abnf_tree * abnf_tree
-  | UnaryOpIncOr of { name : string; elements : abnf_tree list }
-  | RptRange of { range : rpt_range; tree : abnf_tree }
-  | SequenceGrp of abnf_tree list
-  | OptSequence of abnf_tree list
-
-and rpt_range = { lower : range_num; upper : range_num }
-
-and range_num = RangeInt of int | Infinity
+open Types
 
 let rec str_join ch str_list =
   match str_list with
@@ -33,10 +10,10 @@ let range_num_to_str r =
   match r with RangeInt r -> Printf.sprintf "%d" r | Infinity -> "∞"
 
 let rec to_str = function
-  | RuleElement s -> (
+| Rulename s -> Printf.sprintf "{ Rulename: '%s' }" s
+| RuleElement s -> (
       match s with
       | Quotedstring s -> Printf.sprintf "{ Quotedstring: '%s' }" s
-      | Rulename s -> Printf.sprintf "{ Rulename: '%s' }" s
       | TermVal t -> (
           match t with
           | TermInt i -> Printf.sprintf "{ Int: %d }" i
@@ -46,12 +23,12 @@ let rec to_str = function
           | TermCon c ->
               Printf.sprintf "{ TermCon: [%s] }"
                 (str_join ";" (List.map (Printf.sprintf "%d") c.values))))
-  | Rules s ->
+  | OpEq s ->
       Printf.sprintf "Rule name: '%s', elements -> %s" s.name
         (str_join ", " (List.map to_str s.elements))
   | BinOpOr (a, b) -> to_str a ^ " / " ^ to_str b
   | BinOpCon (a, b) -> to_str a ^ " ^ " ^ to_str b
-  | UnaryOpIncOr s ->
+  | OpIncOr s ->
       Printf.sprintf "=/ Rule name: '%s', elements -> %s" s.name
         (str_join ", " (List.map to_str s.elements))
   | RptRange r ->
@@ -187,3 +164,5 @@ let rpt_range_of_string s =
       | None, Some b, Some _ -> Some { lower = RangeInt 0; upper = RangeInt b }
       | None, None, Some _ -> Some { lower = RangeInt 0; upper = Infinity })
   | false -> None
+
+let string_of_term_con tc = str_join "" (List.map (fun c -> String.make 1 (Char.chr c)) tc.values)

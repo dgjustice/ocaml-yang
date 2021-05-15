@@ -1,6 +1,7 @@
 open OUnit2
 open Parsing
-open Ast
+open Ast.Types
+open Ast.Utils
 
 let expr_of_string s = Parser.rules Lexer.lex (Lexing.from_string s)
 

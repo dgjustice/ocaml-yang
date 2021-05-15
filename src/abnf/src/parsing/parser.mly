@@ -21,12 +21,13 @@
 %token EOF
 
 %{
-  open Ast
+  open Ast.Utils
+  open Ast.Types
 %}
 
 %start rules
 
-%type <Ast.abnf_tree list> rules
+%type <Ast.Types.abnf_tree list> rules
 
 %%
 
@@ -35,8 +36,8 @@ rules:
 | EOF {[]}
 
 rule:
-| rn=RULEDEF e=expr { Rules{name = rn; elements = [e]} }
-| rn=RULEDEFOPT e=expr { UnaryOpIncOr{name = rn; elements = [e]} }
+| rn=RULEDEF e=expr { OpEq{name = rn; elements = [e]} }
+| rn=RULEDEFOPT e=expr { OpIncOr{name = rn; elements = [e]} }
 
 // Data validation (e.g. valid range) is done in the "_of_string" functions
 // Option.get fails these on a bad constructor
@@ -51,7 +52,7 @@ element:
 | s=DECIMAL  { RuleElement(decimal_of_string(s) |> Option.get |> TermVal) }
 | s=DECIMALCON  { RuleElement(decimal_con_of_string(s) |> Option.get |> TermVal) }
 | s=DECIMALRANGE  { RuleElement(decimal_range_of_string(s) |> Option.get |> TermVal) }
-| s=RULENAME  { RuleElement(Rulename(s)) }
+| s=RULENAME  { Rulename(s) }
 
 expr:
 | e=element CRLF? {e}

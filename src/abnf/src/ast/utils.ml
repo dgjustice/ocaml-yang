@@ -7,11 +7,11 @@ let rec str_join ch str_list =
   | hd :: tl -> hd ^ ch ^ str_join ch tl
 
 let range_num_to_str r =
-  match r with RangeInt r -> Printf.sprintf "%d" r | Infinity -> "∞"
+  match r with RptRange.RangeInt r -> Printf.sprintf "%d" r | Infinity -> "∞"
 
 let rec to_str = function
-| Rulename s -> Printf.sprintf "{ Rulename: '%s' }" s
-| RuleElement s -> (
+  | Rulename s -> Printf.sprintf "{ Rulename: '%s' }" s
+  | RuleElement s -> (
       match s with
       | Quotedstring s -> Printf.sprintf "{ Quotedstring: '%s' }" s
       | TermVal t -> (
@@ -33,7 +33,7 @@ let rec to_str = function
         (str_join ", " (List.map to_str s.elements))
   | RptRange r ->
       Printf.sprintf "%s-%s of ( %s )"
-        (range_num_to_str r.range.lower)
+        (Printf.sprintf "%d" r.range.lower)
         (range_num_to_str r.range.upper)
         (to_str r.tree)
   | SequenceGrp s ->
@@ -155,14 +155,37 @@ let rpt_range_of_string s =
       | Some _, Some _, None -> None (* Invalid regex case *)
       | None, Some _, None -> None (* Invalid regex case *)
       | None, None, None -> None (* Invalid regex case *)
-      | Some a, None, None -> Some { lower = RangeInt a; upper = RangeInt a }
+      | Some a, None, None -> Some { RptRange.lower = a; upper = RptRange.RangeInt a }
       | Some a, Some b, Some _ -> (
           match a <= b with
-          | true -> Some { lower = RangeInt a; upper = RangeInt b }
+          | true -> Some { RptRange.lower = a; upper = RptRange.RangeInt b }
           | false -> None)
-      | Some a, None, Some _ -> Some { lower = RangeInt a; upper = Infinity }
-      | None, Some b, Some _ -> Some { lower = RangeInt 0; upper = RangeInt b }
-      | None, None, Some _ -> Some { lower = RangeInt 0; upper = Infinity })
+      | Some a, None, Some _ -> Some { RptRange.lower = a; upper = RptRange.Infinity }
+      | None, Some b, Some _ -> Some { RptRange.lower = 0; upper = RptRange.RangeInt b }
+      | None, None, Some _ -> Some { RptRange.lower = 0; RptRange.upper = RptRange.Infinity })
   | false -> None
 
-let string_of_term_con tc = str_join "" (List.map (fun c -> String.make 1 (Char.chr c)) tc.values)
+(* Convert int to Option unicode *)
+let uni_char_of_int_opt i =
+  match Uchar.is_valid i with
+  | true -> Some (Uchar.to_char (Uchar.of_int i))
+  | false -> None
+
+(* Translate term_con list of ints to a string *)
+let string_of_term_con tc =
+  List.map uni_char_of_int_opt tc.values
+  |> Core.Types.list_of_opt_to_opt_list |> Option.get |> List.to_seq
+  |> String.of_seq
+
+(*  *)
+let string_of_term_range tr:TermRange.term_range->string =
+  (uni_char_of_int_opt tr.TermRange.lower |> Option.get
+  |> String.make 1) ^ "-" ^ (uni_char_of_int_opt tr.TermRange.upper 
+  |> Option.get |> String.make 1)
+
+(*  *)
+let string_of_termval tc =
+  match tc with
+  | TermInt i -> uni_char_of_int_opt i |> Option.get |> String.make 1
+  | TermRange tr -> string_of_term_range tr
+  | TermCon tc -> string_of_term_con tc

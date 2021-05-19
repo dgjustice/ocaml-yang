@@ -7,7 +7,6 @@ let
     name = "env";
   
     buildInputs = with nixpkgs; [
-      nixpkgs.opam
       nixpkgs.ocaml
       nixpkgs.ocamlformat
       nixpkgs.gmp

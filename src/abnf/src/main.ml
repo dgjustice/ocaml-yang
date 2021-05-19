@@ -11,5 +11,4 @@ let () = Utils.debug_tokens test_str
 
 let tree = expr_of_string test_str
 
-let () =
-  List.iter (fun t -> t |> to_str |> print_endline) tree
+let () = List.iter (fun t -> t |> to_str |> print_endline) tree
